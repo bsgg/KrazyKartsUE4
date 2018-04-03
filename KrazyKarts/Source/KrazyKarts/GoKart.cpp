@@ -24,8 +24,15 @@ void AGoKart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Get Acceleration according to the throttle and the max driving force
+	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle;
+	FVector acceleration = force / Mass;
+
+	Velocity = Velocity + acceleration * DeltaTime;
+
 	// Move Actor
-	FVector translation = Velocity * 100 *  DeltaTime;
+	FVector translation = Velocity * 100 *  DeltaTime; 
+
 	AddActorWorldOffset(translation);
 
 }
@@ -35,15 +42,12 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
-	//Velocity
 
 }
 
-
 void AGoKart::MoveForward(float Value)
 {
-	Velocity = GetActorForwardVector() * 20 * Value;
+	Throttle = Value;
 }
 
