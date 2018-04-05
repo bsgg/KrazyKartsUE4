@@ -28,6 +28,8 @@ public:
 
 private:	
 
+	void UpdateLocationFromVelocity(float DeltaTime);
+
 	// The mass of the car (Kg)
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000; 
@@ -40,7 +42,6 @@ private:
 
 	FVector Velocity;
 
-	float Throttle;
-	
+	float Throttle;	
 	
 };

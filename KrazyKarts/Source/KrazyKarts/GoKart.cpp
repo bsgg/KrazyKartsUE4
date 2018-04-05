@@ -25,16 +25,28 @@ void AGoKart::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Get Acceleration according to the throttle and the max driving force
-	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle;
+	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle; 
+	
 	FVector acceleration = force / Mass;
 
 	Velocity = Velocity + acceleration * DeltaTime;
 
+	UpdateLocationFromVelocity(DeltaTime);
+
+}
+
+void AGoKart::UpdateLocationFromVelocity(float DeltaTime)
+{
 	// Move Actor
-	FVector translation = Velocity * 100 *  DeltaTime; 
-
-	AddActorWorldOffset(translation);
-
+	FVector translation = Velocity * 100 * DeltaTime;
+	// FHit result if collision with something
+	FHitResult hit;
+	AddActorWorldOffset(translation, true, &hit);
+	if (hit.IsValidBlockingHit()) // IsValidBlockingHit Returns true if there was a blocking hit that was not caused by starting in penetration.
+	{
+		// Reset velocity
+		Velocity = FVector::ZeroVector;
+	}
 }
 
 // Called to bind functionality to input
@@ -43,11 +55,11 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
-
 }
 
 void AGoKart::MoveForward(float Value)
 {
+	// Add a throttle (acelerador) based on the input 
 	Throttle = Value;
 }
 
