@@ -27,14 +27,25 @@ void AGoKart::Tick(float DeltaTime)
 	// Get Acceleration according to the throttle and the max driving force
 	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle; 
 	
+	// Add resistance
+	force += GetResistance();
+
 	FVector acceleration = force / Mass;
 
 	Velocity = Velocity + acceleration * DeltaTime;
 
-	ApplyRotation(DeltaTime);
+	ApplyRotation(DeltaTime); 
 
 	UpdateLocationFromVelocity(DeltaTime);
 
+}
+
+FVector AGoKart::GetResistance()
+{
+	// AirResistance =  -Speed^2 * DragCoefficient
+	// GetSafeNormal() Direction of the Velocity
+	// Velocity.SizeSquared() = We get the ^2 with this function
+	return (- Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient);
 }
 
 void AGoKart::ApplyRotation(float DeltaTime)
