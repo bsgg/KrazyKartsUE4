@@ -50,7 +50,7 @@ FVector AGoKart::GetAirResistance()
 	// AirResistance =  -Speed^2 * DragCoefficient
 	// GetSafeNormal() Direction of the Velocity
 	// Velocity.SizeSquared() = We get the ^2 with this function
-	return (- Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient);
+	return (- Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient); 
 }
 
 FVector AGoKart::GetRollingResistance()
@@ -65,9 +65,10 @@ FVector AGoKart::GetRollingResistance()
 
 void AGoKart::ApplyRotation(float DeltaTime)
 {
+	float deltaLocation = FVector::DotProduct(GetActorForwardVector(), Velocity)  * DeltaTime;
 	// Rotation based on an axis and a degrees in radians
-	float rotationAngle = MaxDegreesPerSecond * DeltaTime * SteeringThrow;
-	FQuat rotationDelta(GetActorUpVector(), FMath::DegreesToRadians(rotationAngle));
+	float rotationAngle = deltaLocation / MinTurningRadius * SteeringThrow;
+	FQuat rotationDelta(GetActorUpVector(),rotationAngle);
 
 	// Rotate the velocity according to the rotation
 	Velocity = rotationDelta.RotateVector(Velocity);
