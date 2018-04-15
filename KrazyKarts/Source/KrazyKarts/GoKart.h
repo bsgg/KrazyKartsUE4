@@ -59,8 +59,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RollingResistanceCoefficient = 0.015;
 
-	void MoveForward(float Value);
-	void MoveRight(float Value);
+	// Make function executed on the server
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveForward(float Value);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveRight(float Value);
 
 	FVector Velocity;
 	

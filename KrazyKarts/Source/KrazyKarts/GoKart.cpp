@@ -79,7 +79,7 @@ void AGoKart::ApplyRotation(float DeltaTime)
 void AGoKart::UpdateLocationFromVelocity(float DeltaTime)
 {
 	// Move Actor
-	FVector translation = Velocity * 100 * DeltaTime;
+	FVector translation = Velocity * 100 * DeltaTime;  
 	// FHit result if collision with something
 	FHitResult hit;
 	AddActorWorldOffset(translation, true, &hit);
@@ -95,18 +95,33 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::Server_MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::Server_MoveRight);
 }
 
-void AGoKart::MoveForward(float Value)
+// To implement Server_MoveForward, unreal needs  _Implementation and _Validate
+void AGoKart::Server_MoveForward_Implementation(float Value)
 {
 	// Add a throttle (acelerador) based on the input 
 	Throttle = Value;
 }
 
-void AGoKart::MoveRight(float Value)
+// To implement Server_MoveForward, unreal needs  _Implementation and _Validate
+bool AGoKart::Server_MoveForward_Validate(float Value)
+{
+	// For the moment anything coming from the client is valid
+	return (FMath::Abs(Value) <= 1);
+}
+
+void AGoKart::Server_MoveRight_Implementation(float Value)
 {
 	SteeringThrow = Value;
+}
+
+// To implement Server_MoveRight, unreal needs  _Implementation and _Validate
+bool AGoKart::Server_MoveRight_Validate(float Value)
+{
+	// For the moment anything coming from the client is valid
+	return (FMath::Abs(Value) <= 1);;
 }
 
