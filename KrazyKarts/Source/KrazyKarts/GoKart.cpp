@@ -4,6 +4,7 @@
 #include "Components/InputComponent.h"
 
 #include "Engine/World.h"
+#include "DrawDebugHelpers.h"
 
 
 // Sets default values
@@ -19,6 +20,28 @@ void AGoKart::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+FString GetEnumText(ENetRole Role)
+{
+	switch (Role)
+	{
+	case ROLE_None:
+		return "None";
+		break;
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+		break;
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+		break;
+	case ROLE_Authority:
+		return "Authority";
+		break;
+	default:
+		return "Error";
+		break;
+	}
 }
 
 // Called every frame
@@ -42,6 +65,10 @@ void AGoKart::Tick(float DeltaTime)
 	ApplyRotation(DeltaTime); 
 
 	UpdateLocationFromVelocity(DeltaTime);
+
+	// Debug string to check the role of this car
+	//DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+	
 
 }
 
@@ -95,9 +122,22 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::Server_MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::Server_MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
+
+void AGoKart::MoveForward(float Value)
+{
+	Throttle = Value;
+	Server_MoveForward(Value);
+}
+void AGoKart::MoveRight(float Value)
+{
+	SteeringThrow = Value;
+	Server_MoveRight(Value);
+}
+
+
 
 // To implement Server_MoveForward, unreal needs  _Implementation and _Validate
 void AGoKart::Server_MoveForward_Implementation(float Value)
@@ -122,6 +162,6 @@ void AGoKart::Server_MoveRight_Implementation(float Value)
 bool AGoKart::Server_MoveRight_Validate(float Value)
 {
 	// For the moment anything coming from the client is valid
-	return (FMath::Abs(Value) <= 1);;
+	return (FMath::Abs(Value) <= 1);
 }
 
