@@ -5,6 +5,7 @@
 
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "UnrealNetwork.h"
 
 
 // Sets default values
@@ -12,7 +13,7 @@ AGoKart::AGoKart()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -21,6 +22,15 @@ void AGoKart::BeginPlay()
 	Super::BeginPlay();
 	
 }
+
+void AGoKart::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AGoKart, ReplicatedLocation);
+	DOREPLIFETIME(AGoKart, ReplicatedRotation);
+}
+
 
 FString GetEnumText(ENetRole Role)
 {
@@ -66,8 +76,22 @@ void AGoKart::Tick(float DeltaTime)
 
 	UpdateLocationFromVelocity(DeltaTime);
 
+	// If we have the authority (we are teh server) set the replicated location from the actor
+	// If not set the location from Replicated location
+	if (HasAuthority())
+	{
+		ReplicatedLocation = GetActorLocation();
+		ReplicatedRotation = GetActorRotation();
+	}
+	else
+	{
+		SetActorLocation(ReplicatedLocation);
+		SetActorRotation(ReplicatedRotation);
+	}
+
+
 	// Debug string to check the role of this car
-	//DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 	
 
 }
@@ -122,19 +146,22 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	// Handle the binding locally and call the server from those methods. The server will update to the rest of the clients
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
 
 void AGoKart::MoveForward(float Value)
 {
+	
 	Throttle = Value;
 	Server_MoveForward(Value);
 }
 void AGoKart::MoveRight(float Value)
 {
+
 	SteeringThrow = Value;
-	Server_MoveRight(Value);
+	Server_MoveRight(Value); 
 }
 
 

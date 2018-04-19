@@ -72,6 +72,14 @@ private:
 	void Server_MoveRight(float Value);
 
 	FVector Velocity;
+
+	// Each actor maintains a list of properties that can be marked for replication to clients. 
+	// Whenever the value of the variable changes on the server side, the server sends the client the updated value
+	UPROPERTY(replicated)
+	FVector ReplicatedLocation;
+
+	UPROPERTY(replicated)
+	FRotator ReplicatedRotation;
 	
 	// Upwards, backwards acc force
 	float Throttle;	
