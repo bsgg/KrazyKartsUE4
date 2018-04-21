@@ -19,7 +19,12 @@ AGoKart::AGoKart()
 // Called when the game starts or when spawned
 void AGoKart::BeginPlay()
 {
-	Super::BeginPlay();
+	Super::BeginPlay(); 
+
+	if (HasAuthority())
+	{
+		NetUpdateFrequency = 1;
+	}
 	
 }
 
@@ -27,8 +32,10 @@ void AGoKart::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AGoKart, ReplicatedLocation);
-	DOREPLIFETIME(AGoKart, ReplicatedRotation);
+	DOREPLIFETIME(AGoKart, ReplicatedTransform);
+	DOREPLIFETIME(AGoKart, Velocity);
+	DOREPLIFETIME(AGoKart, Throttle);
+	DOREPLIFETIME(AGoKart, SteeringThrow);
 }
 
 
@@ -80,20 +87,19 @@ void AGoKart::Tick(float DeltaTime)
 	// If not set the location from Replicated location
 	if (HasAuthority())
 	{
-		ReplicatedLocation = GetActorLocation();
-		ReplicatedRotation = GetActorRotation();
-	}
-	else
-	{
-		SetActorLocation(ReplicatedLocation);
-		SetActorRotation(ReplicatedRotation);
-	}
-
+		ReplicatedTransform = GetActorTransform();
+	}	
 
 	// Debug string to check the role of this car
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 	
 
+}
+
+void AGoKart::OnRep_ReplicatedTransform()
+{
+	// Update transform when this trigger is send
+	SetActorTransform(ReplicatedTransform);
 }
 
 FVector AGoKart::GetAirResistance()

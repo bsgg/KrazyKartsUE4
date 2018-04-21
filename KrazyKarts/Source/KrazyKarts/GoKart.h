@@ -71,20 +71,26 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveRight(float Value);
 
+	UPROPERTY(Replicated)
 	FVector Velocity;
+
 
 	// Each actor maintains a list of properties that can be marked for replication to clients. 
 	// Whenever the value of the variable changes on the server side, the server sends the client the updated value
-	UPROPERTY(replicated)
-	FVector ReplicatedLocation;
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
+	FTransform ReplicatedTransform;
 
-	UPROPERTY(replicated)
-	FRotator ReplicatedRotation;
+	// Replication notification for the property ReplicatedLocation
+	UFUNCTION()
+	void OnRep_ReplicatedTransform();
+
 	
 	// Upwards, backwards acc force
+	UPROPERTY(Replicated)
 	float Throttle;	
 
 	// Left, right acc force
+	UPROPERTY(Replicated)
 	float SteeringThrow;
 	
 };
