@@ -32,8 +32,7 @@ void AGoKart::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AGoKart, ReplicatedTransform);
-	DOREPLIFETIME(AGoKart, Velocity);
+	DOREPLIFETIME(AGoKart, ServerState);
 	DOREPLIFETIME(AGoKart, Throttle);
 	DOREPLIFETIME(AGoKart, SteeringThrow);  
 }
@@ -66,6 +65,19 @@ void AGoKart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (IsLocallyControlled())
+	{ 
+		FGoKartMove Move;
+		Move.DeltaTime = DeltaTime;
+		Move.SteeringThrow = SteeringThrow;
+		Move.Throttle = Throttle;
+		// TODO: Move.Time = 
+
+		// Send move
+		Server_SendMove(Move);
+	}
+
+
 	// Get Acceleration according to the throttle and the max driving force
 	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle; 
 	
@@ -87,7 +99,9 @@ void AGoKart::Tick(float DeltaTime)
 	// If not set the location from Replicated location
 	if (HasAuthority())
 	{
-		ReplicatedTransform = GetActorTransform();
+		ServerState.Transform =  GetActorTransform();
+		ServerState.Velocity = Velocity;
+		// TODO UPDATE ServerState.LastMove = 
 	}	
 
 	// Debug string to check the role of this car
@@ -96,10 +110,12 @@ void AGoKart::Tick(float DeltaTime)
 
 }
 
-void AGoKart::OnRep_ReplicatedTransform()
+void AGoKart::OnRep_ServerState()
 {
 	// Update transform when this trigger is send
-	SetActorTransform(ReplicatedTransform);
+	SetActorTransform(ServerState.Transform);
+	Velocity = ServerState.Velocity;
+
 }
 
 FVector AGoKart::GetAirResistance()
@@ -161,40 +177,30 @@ void AGoKart::MoveForward(float Value)
 {
 	
 	Throttle = Value;
-	Server_MoveForward(Value);
 }
 void AGoKart::MoveRight(float Value)
 {
 
 	SteeringThrow = Value;
-	Server_MoveRight(Value); 
+
 }
 
 
 
-// To implement Server_MoveForward, unreal needs  _Implementation and _Validate
-void AGoKart::Server_MoveForward_Implementation(float Value)
+// To implement Server_SendMove, unreal needs  _Implementation and _Validate
+void AGoKart::Server_SendMove_Implementation(FGoKartMove Move)
 {
 	// Add a throttle (acelerador) based on the input 
-	Throttle = Value;
+	Throttle = Move.Throttle;
+	SteeringThrow = Move.SteeringThrow;
 }
 
-// To implement Server_MoveForward, unreal needs  _Implementation and _Validate
-bool AGoKart::Server_MoveForward_Validate(float Value)
+// To implement Server_SendMove, unreal needs  _Implementation and _Validate
+bool AGoKart::Server_SendMove_Validate(FGoKartMove Move)
 {
 	// For the moment anything coming from the client is valid
-	return (FMath::Abs(Value) <= 1);
-}
+	//return (FMath::Abs(Value) <= 1);
 
-void AGoKart::Server_MoveRight_Implementation(float Value)
-{
-	SteeringThrow = Value;
-}
-
-// To implement Server_MoveRight, unreal needs  _Implementation and _Validate
-bool AGoKart::Server_MoveRight_Validate(float Value)
-{
-	// For the moment anything coming from the client is valid
-	return (FMath::Abs(Value) <= 1);
+	return true; // TODO: Make better validation
 }
 

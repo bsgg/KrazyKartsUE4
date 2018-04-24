@@ -23,6 +23,9 @@ struct FGoKartMove
 
 	UPROPERTY()
 	float DeltaTime;
+
+	UPROPERTY()
+	float Time;
 };
 
 USTRUCT()
@@ -49,7 +52,7 @@ class KRAZYKARTS_API AGoKart : public APawn
 
 public:
 	// Sets default values for this pawn's properties
-	AGoKart();
+	AGoKart(); 
 
 protected:
 	// Called when the game starts or when spawned
@@ -102,24 +105,17 @@ private:
 
 	// Make function executed on the server
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveForward(float Value);
+	void Server_SendMove(FGoKartMove Move);
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveRight(float Value);
+	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
+	FGoKartState ServerState;
 
-	UPROPERTY(Replicated)
-	FVector Velocity;
-
-
-	// Each actor maintains a list of properties that can be marked for replication to clients. 
-	// Whenever the value of the variable changes on the server side, the server sends the client the updated value
-	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
-	FTransform ReplicatedTransform;
-
-	// Replication notification for the property ReplicatedLocation
 	UFUNCTION()
-	void OnRep_ReplicatedTransform();
+	void OnRep_ServerState();
 
+
+
+	FVector Velocity;
 	
 	// Upwards, backwards acc force
 	UPROPERTY(Replicated)
