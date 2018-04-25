@@ -33,8 +33,7 @@ void AGoKart::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AGoKart, ServerState);
-	DOREPLIFETIME(AGoKart, Throttle);
-	DOREPLIFETIME(AGoKart, SteeringThrow);  
+
 }
 
 
@@ -75,38 +74,11 @@ void AGoKart::Tick(float DeltaTime)
 
 		// Send move
 		Server_SendMove(Move);
+		SimulateMove(Move);
 	}
 
-
-	// Get Acceleration according to the throttle and the max driving force
-	FVector force = GetActorForwardVector() * MaxDrivingForce * Throttle; 
-	
-	// Add air and rolling resistance
-	force += GetAirResistance();
-	force += GetRollingResistance();
-
-	FVector acceleration = force / Mass;	
-
-	// Rolling resistance
-
-	Velocity = Velocity + acceleration * DeltaTime;
-
-	ApplyRotation(DeltaTime); 
-
-	UpdateLocationFromVelocity(DeltaTime);
-
-	// If we have the authority (we are teh server) set the replicated location from the actor
-	// If not set the location from Replicated location
-	if (HasAuthority())
-	{
-		ServerState.Transform =  GetActorTransform();
-		ServerState.Velocity = Velocity;
-		// TODO UPDATE ServerState.LastMove = 
-	}	
-
 	// Debug string to check the role of this car
-	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
-	
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);	
 
 }
 
@@ -116,6 +88,25 @@ void AGoKart::OnRep_ServerState()
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
 
+}
+
+void AGoKart::SimulateMove(FGoKartMove Move)
+{
+	// Get Acceleration according to the throttle and the max driving force
+	FVector force = GetActorForwardVector() * MaxDrivingForce * Move.Throttle;
+
+	// Add air and rolling resistance
+	force += GetAirResistance();
+	force += GetRollingResistance();
+
+	FVector acceleration = force / Mass;
+
+	// Rolling resistance
+	Velocity = Velocity + acceleration * Move.DeltaTime;
+
+	ApplyRotation(Move.DeltaTime, Move.SteeringThrow);
+
+	UpdateLocationFromVelocity(Move.DeltaTime);
 }
 
 FVector AGoKart::GetAirResistance()
@@ -136,7 +127,7 @@ FVector AGoKart::GetRollingResistance()
 	return (-Velocity.GetSafeNormal() * RollingResistanceCoefficient * normalForce);
 }
 
-void AGoKart::ApplyRotation(float DeltaTime)
+void AGoKart::ApplyRotation(float DeltaTime, float SteeringThrow)
 {
 	float deltaLocation = FVector::DotProduct(GetActorForwardVector(), Velocity)  * DeltaTime;
 	// Rotation based on an axis and a degrees in radians
@@ -174,25 +165,23 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 }
 
 void AGoKart::MoveForward(float Value)
-{
-	
+{	
 	Throttle = Value;
 }
 void AGoKart::MoveRight(float Value)
 {
-
 	SteeringThrow = Value;
-
 }
-
-
 
 // To implement Server_SendMove, unreal needs  _Implementation and _Validate
 void AGoKart::Server_SendMove_Implementation(FGoKartMove Move)
 {
-	// Add a throttle (acelerador) based on the input 
-	Throttle = Move.Throttle;
-	SteeringThrow = Move.SteeringThrow;
+
+	SimulateMove(Move);
+
+	ServerState.LastMove = Move;
+	ServerState.Transform = GetActorTransform();
+	ServerState.Velocity = Velocity;
 }
 
 // To implement Server_SendMove, unreal needs  _Implementation and _Validate
@@ -200,7 +189,6 @@ bool AGoKart::Server_SendMove_Validate(FGoKartMove Move)
 {
 	// For the moment anything coming from the client is valid
 	//return (FMath::Abs(Value) <= 1);
-
 	return true; // TODO: Make better validation
 }
 

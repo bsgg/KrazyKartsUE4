@@ -69,6 +69,8 @@ public:
 
 private:	
 
+	void SimulateMove(FGoKartMove Move);
+
 	// Get air resistance
 	FVector GetAirResistance();
 
@@ -76,7 +78,7 @@ private:
 	FVector GetRollingResistance();
 
 	void UpdateLocationFromVelocity(float DeltaTime); 
-	void ApplyRotation(float DeltaTime);
+	void ApplyRotation(float DeltaTime, float SteeringThrow);
 
 	// The mass of the car (Kg)
 	UPROPERTY(EditAnywhere)
@@ -92,7 +94,7 @@ private:
 
 	// Higher means more drag (Kg/meters)
 	UPROPERTY(EditAnywhere)
-	float DragCoefficient = 16;
+	float DragCoefficient = 16; 
 
 	// Higher means rolling resistance
 	UPROPERTY(EditAnywhere)
@@ -118,11 +120,8 @@ private:
 	FVector Velocity;
 	
 	// Upwards, backwards acc force
-	UPROPERTY(Replicated)
 	float Throttle;	
 
 	// Left, right acc force
-	UPROPERTY(Replicated)
-	float SteeringThrow;
-	
+	float SteeringThrow;	
 };
