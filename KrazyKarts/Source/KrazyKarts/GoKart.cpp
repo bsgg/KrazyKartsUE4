@@ -65,28 +65,33 @@ void AGoKart::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (IsLocallyControlled())
-	{ 
-		FGoKartMove Move;
-		Move.DeltaTime = DeltaTime;
-		Move.SteeringThrow = SteeringThrow;
-		Move.Throttle = Throttle;
-		// TODO: Move.Time = 
+	{
+		// Crete and add the move in UnacknowledgeMoves
+		FGoKartMove Move = CreteMove(DeltaTime);
+		if (!HasAuthority())
+		{
+			UnacknowledgedMoves.Add(Move);
+			UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
+		}		
 
 		// Send move
 		Server_SendMove(Move);
-		SimulateMove(Move);
+		SimulateMove(Move); 
 	}
 
 	// Debug string to check the role of this car
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);	
-
 }
+
+
 
 void AGoKart::OnRep_ServerState()
 {
 	// Update transform when this trigger is send
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
+
+	ClearAcknowledgeMoves(ServerState.LastMove);
 
 }
 
@@ -108,6 +113,32 @@ void AGoKart::SimulateMove(FGoKartMove Move)
 
 	UpdateLocationFromVelocity(Move.DeltaTime);
 }
+
+FGoKartMove AGoKart::CreteMove(float DeltaTime)
+{
+	FGoKartMove Move;
+	Move.DeltaTime = DeltaTime;
+	Move.SteeringThrow = SteeringThrow;
+	Move.Throttle = Throttle;
+	Move.Time = GetWorld()->TimeSeconds;
+
+	return Move;
+}
+
+void AGoKart::ClearAcknowledgeMoves(FGoKartMove LastMove)
+{
+	TArray<FGoKartMove> NewMoves;
+	for (const FGoKartMove& Move : UnacknowledgedMoves)
+	{
+		if (Move.Time > LastMove.Time)
+		{
+			NewMoves.Add(Move);
+		}
+	}
+
+	UnacknowledgedMoves = NewMoves;
+}
+
 
 FVector AGoKart::GetAirResistance()
 {

@@ -70,6 +70,8 @@ public:
 private:	
 
 	void SimulateMove(FGoKartMove Move);
+	FGoKartMove CreteMove(float DeltaTime);
+	void ClearAcknowledgeMoves(FGoKartMove LastMove);
 
 	// Get air resistance
 	FVector GetAirResistance();
@@ -100,10 +102,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RollingResistanceCoefficient = 0.015;
 
-
 	void MoveForward(float Value);
 	void MoveRight(float Value);
-
 
 	// Make function executed on the server
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -115,8 +115,6 @@ private:
 	UFUNCTION()
 	void OnRep_ServerState();
 
-
-
 	FVector Velocity;
 	
 	// Upwards, backwards acc force
@@ -124,4 +122,7 @@ private:
 
 	// Left, right acc force
 	float SteeringThrow;	
+
+	// Moves that weren't included
+	TArray<FGoKartMove> UnacknowledgedMoves;
 };
