@@ -69,8 +69,8 @@ public:
 
 private:	
 
-	void SimulateMove(FGoKartMove Move);
-	FGoKartMove CreteMove(float DeltaTime);
+	void SimulateMove(const FGoKartMove Move);
+	FGoKartMove CreateMove(float DeltaTime);
 	void ClearAcknowledgeMoves(FGoKartMove LastMove);
 
 	// Get air resistance

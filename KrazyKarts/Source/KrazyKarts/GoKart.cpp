@@ -62,21 +62,31 @@ FString GetEnumText(ENetRole Role)
 // Called every frame
 void AGoKart::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(DeltaTime);	
 
-	if (IsLocallyControlled())
+	if (Role == ROLE_AutonomousProxy)
 	{
 		// Crete and add the move in UnacknowledgeMoves
-		FGoKartMove Move = CreteMove(DeltaTime);
-		if (!HasAuthority())
-		{
-			UnacknowledgedMoves.Add(Move);
-			UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
-		}		
+		FGoKartMove Move = CreateMove(DeltaTime);
+		SimulateMove(Move);
+
+		UnacknowledgedMoves.Add(Move);
 
 		// Send move
 		Server_SendMove(Move);
-		SimulateMove(Move); 
+	}
+
+	// We are server and in control of the pawn
+	if ((Role == ROLE_Authority) && (GetRemoteRole() == ROLE_SimulatedProxy))
+	{
+		// Crete and add the move in UnacknowledgeMoves
+		FGoKartMove Move = CreateMove(DeltaTime);
+		Server_SendMove(Move);
+	}
+
+	if (Role == ROLE_SimulatedProxy)
+	{
+		SimulateMove(ServerState.LastMove);
 	}
 
 	// Debug string to check the role of this car
@@ -93,9 +103,15 @@ void AGoKart::OnRep_ServerState()
 
 	ClearAcknowledgeMoves(ServerState.LastMove);
 
+	// Simulate all unacknowledge moves
+	for (const FGoKartMove& Move : UnacknowledgedMoves)
+	{
+		SimulateMove(Move);		
+	}
+
 }
 
-void AGoKart::SimulateMove(FGoKartMove Move)
+void AGoKart::SimulateMove(const FGoKartMove Move)
 {
 	// Get Acceleration according to the throttle and the max driving force
 	FVector force = GetActorForwardVector() * MaxDrivingForce * Move.Throttle;
@@ -114,7 +130,7 @@ void AGoKart::SimulateMove(FGoKartMove Move)
 	UpdateLocationFromVelocity(Move.DeltaTime);
 }
 
-FGoKartMove AGoKart::CreteMove(float DeltaTime)
+FGoKartMove AGoKart::CreateMove(float DeltaTime)
 {
 	FGoKartMove Move;
 	Move.DeltaTime = DeltaTime;
