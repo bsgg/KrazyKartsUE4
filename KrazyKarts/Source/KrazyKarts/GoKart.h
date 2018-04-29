@@ -4,29 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "GoKartMovementComponent.h"
 #include "GoKart.generated.h"
-
-
-
-USTRUCT()
-struct FGoKartMove
-{
-	GENERATED_USTRUCT_BODY()
-
-	// Upwards, backwards acc force
-	UPROPERTY()
-	float Throttle;
-
-	// Left, right acc force
-	UPROPERTY()
-	float SteeringThrow;
-
-	UPROPERTY()
-	float DeltaTime;
-
-	UPROPERTY()
-	float Time;
-};
 
 USTRUCT()
 struct FGoKartState
@@ -60,47 +39,14 @@ protected:
 
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	
+	virtual void Tick(float DeltaTime) override;	
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:	
 
-	void SimulateMove(const FGoKartMove Move);
-	FGoKartMove CreateMove(float DeltaTime);
 	void ClearAcknowledgeMoves(FGoKartMove LastMove);
-
-	// Get air resistance
-	FVector GetAirResistance();
-
-	// Get air resistance
-	FVector GetRollingResistance();
-
-	void UpdateLocationFromVelocity(float DeltaTime); 
-	void ApplyRotation(float DeltaTime, float SteeringThrow);
-
-	// The mass of the car (Kg)
-	UPROPERTY(EditAnywhere)
-	float Mass = 1000; 
-
-	// The force applied to the car when the throttle is fully down (Newtons N)
-	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce = 10000;
-
-	// The minimun radious of th ecar turning circle at full lock (m)
-	UPROPERTY(EditAnywhere)
-	float MinTurningRadius = 10;
-
-	// Higher means more drag (Kg/meters)
-	UPROPERTY(EditAnywhere)
-	float DragCoefficient = 16; 
-
-	// Higher means rolling resistance
-	UPROPERTY(EditAnywhere)
-	float RollingResistanceCoefficient = 0.015;
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -113,16 +59,11 @@ private:
 	FGoKartState ServerState;
 
 	UFUNCTION()
-	void OnRep_ServerState();
-
-	FVector Velocity;
-	
-	// Upwards, backwards acc force
-	float Throttle;	
-
-	// Left, right acc force
-	float SteeringThrow;	
+	void OnRep_ServerState();	
 
 	// Moves that weren't included
 	TArray<FGoKartMove> UnacknowledgedMoves;
+
+	UPROPERTY(EditAnywhere)
+	UGoKartMovementComponent * MovementComponent;
 };
