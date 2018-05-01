@@ -19,20 +19,21 @@ void UGoKartMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	// ...	
 }
-
 
 // Called every frame
 void UGoKartMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	// Crete and add the movement and simulate this movement
+	if (GetOwnerRole() == ROLE_AutonomousProxy || (GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy))
+	{
+		LastMove = CreateMove(DeltaTime);
+		SimulateMove(LastMove);
+	}
 }
-
-
 
 void UGoKartMovementComponent::SimulateMove(const FGoKartMove Move)
 {

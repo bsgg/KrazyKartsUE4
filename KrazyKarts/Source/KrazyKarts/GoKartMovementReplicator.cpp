@@ -41,24 +41,19 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 
 	if (MovementComponent == nullptr) return;
 
+	FGoKartMove LastMove = MovementComponent->GetLastMove();
+
 	if (GetOwnerRole() == ROLE_AutonomousProxy)
-	{
-		// Crete and add the move in UnacknowledgeMoves
-		FGoKartMove Move = MovementComponent->CreateMove(DeltaTime);
-		MovementComponent->SimulateMove(Move);
-
-		UnacknowledgedMoves.Add(Move);
-
-		// Send move
-		Server_SendMove(Move);
+	{	
+		// Include last move from movement component and send it to the server
+		UnacknowledgedMoves.Add(LastMove);
+		Server_SendMove(LastMove);
 	}
 
 	// We are server and in control of the pawn
-	if ((GetOwnerRole() == ROLE_Authority) && (GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy))
+	if (GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy)
 	{
-		// Crete and add the move in UnacknowledgeMoves
-		FGoKartMove Move = MovementComponent->CreateMove(DeltaTime);
-		Server_SendMove(Move);
+		UpdateServerState(LastMove);
 	}
 
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
@@ -66,6 +61,15 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 		MovementComponent->SimulateMove(ServerState.LastMove);
 	}
 }
+
+
+void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove Move)
+{
+	ServerState.LastMove = Move;
+	ServerState.Transform = GetOwner()->GetActorTransform();
+	ServerState.Velocity = MovementComponent->GetVelocity();
+}
+
 
 void UGoKartMovementReplicator::OnRep_ServerState()
 {
@@ -99,6 +103,8 @@ void UGoKartMovementReplicator::ClearAcknowledgeMoves(FGoKartMove LastMove)
 }
 
 
+
+
 // To implement Server_SendMove, unreal needs  _Implementation and _Validate
 void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Move)
 {
@@ -106,9 +112,7 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Move)
 
 	MovementComponent->SimulateMove(Move);
 
-	ServerState.LastMove = Move;
-	ServerState.Transform = GetOwner()->GetActorTransform();
-	ServerState.Velocity = MovementComponent->GetVelocity();
+	UpdateServerState(Move);	
 }
 
 // To implement Server_SendMove, unreal needs  _Implementation and _Validate
@@ -116,7 +120,7 @@ bool UGoKartMovementReplicator::Server_SendMove_Validate(FGoKartMove Move)
 {
 	// For the moment anything coming from the client is valid
 	//return (FMath::Abs(Value) <= 1);
-	return true; // TODO: Make better validation
+	return true; // TODO: Make better validation 
 }
 
 
