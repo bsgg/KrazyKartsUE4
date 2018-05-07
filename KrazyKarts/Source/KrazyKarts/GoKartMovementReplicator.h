@@ -90,6 +90,7 @@ private:
 	float ClientTimeBetweenLastUpdates;
 	FTransform ClientStartTransform;
 	FVector ClientStartVelocity;
+	float ClientSimulatedTime;
 
 	
 	UPROPERTY()

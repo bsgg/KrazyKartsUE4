@@ -59,7 +59,7 @@ FGoKartMove UGoKartMovementComponent::CreateMove(float DeltaTime)
 {
 	FGoKartMove Move;
 	Move.DeltaTime = DeltaTime;
-	Move.SteeringThrow = SteeringThrow;
+	Move.SteeringThrow = SteeringThrow ;
 	Move.Throttle = Throttle;
 	Move.Time = GetWorld()->TimeSeconds;
 
